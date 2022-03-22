@@ -19,4 +19,3 @@ go build
 ## Utilisation
 
 Bien que cet exemple soit pour donner une base avec un code simple, il est utilisable avec telnet pour faire des essais, pour les "commandes" voir dans le fichier server.go.
-
