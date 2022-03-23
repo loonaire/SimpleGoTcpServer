@@ -10,23 +10,23 @@ import (
 type TcpServer struct {
 	ip         string
 	port       string
-	clientList map[int]Client
+	clientList map[uint]Client
 	/* Ici il est possible de personnalisé les données du client en ajoutant des éléments */
 }
 
 type Client struct {
 	conn         net.Conn
-	connectionId int // clé de la map clientList qui sert à "identifier" le client, ainsi il a un identifiant unique
-	clientList   *map[int]Client
+	connectionId uint // clé de la map clientList qui sert à "identifier" le client, ainsi il a un identifiant unique
+	clientList   *map[uint]Client
 }
 
 func NewTcpServer(ip string, port string) TcpServer {
-	server := TcpServer{ip: ip, port: port, clientList: make(map[int]Client)}
+	server := TcpServer{ip: ip, port: port, clientList: make(map[uint]Client)}
 	return server
 }
 
 func (server *TcpServer) StartServer() {
-	var connectionId int = 0 // nombre de clients qui se sont connecté
+	var connectionId uint = 0 // nombre de clients qui se sont connecté
 	log.Println("Démarrage du serveur...")
 	listener, err := net.Listen("tcp", server.ip+":"+server.port)
 	if err != nil {
@@ -53,12 +53,15 @@ func (client *Client) handleClient() {
 	for {
 
 		// gère le timeout de la connexion, le temps avant deconnexion si la connexion ne reçoit ni envoi aucun paquet
-		client.conn.SetDeadline(time.Now().Add(120 * time.Second))
+		//client.conn.SetDeadline(time.Now().Add(120 * time.Second)) // si on a reçu ni envoyer aucun paquet vers le client
+		client.conn.SetReadDeadline(time.Now().Add(10 * time.Second)) // si on a pas reçu de paquet du client, on le deconnecte (ne compte pas si on lui envoi un paquet)
 		packet := make([]byte, 200)
 		packetlen, err := client.conn.Read(packet)
 		if err != nil {
+
 			// gère l'inactivité du client
 			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+				client.send("Deconnexion pour inactivité\n")
 				log.Println("Deconnexion pour inactivité", err)
 				break
 			} else {
@@ -87,9 +90,9 @@ func (client *Client) handleClient() {
 		}
 
 	}
+	// ferme la connexion et supprime les informations du client
 	client.conn.Close()
 	delete(*client.clientList, client.connectionId)
-	client.send("Client déconnecté\n")
 }
 
 func (client *Client) send(packetData string) {
