@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+const SOCKET_TIMEOUT = 120
+
 type TcpServer struct {
 	ip         string
 	port       string
@@ -54,7 +56,7 @@ func (client *Client) handleClient() {
 
 		// gère le timeout de la connexion, le temps avant deconnexion si la connexion ne reçoit ni envoi aucun paquet
 		//client.conn.SetDeadline(time.Now().Add(120 * time.Second)) // si on a reçu ni envoyer aucun paquet vers le client
-		client.conn.SetReadDeadline(time.Now().Add(10 * time.Second)) // si on a pas reçu de paquet du client, on le deconnecte (ne compte pas si on lui envoi un paquet)
+		client.conn.SetReadDeadline(time.Now().Add(SOCKET_TIMEOUT * time.Second)) // si on a pas reçu de paquet du client, on le deconnecte (ne compte pas si on lui envoi un paquet)
 		packet := make([]byte, 200)
 		packetlen, err := client.conn.Read(packet)
 		if err != nil {
